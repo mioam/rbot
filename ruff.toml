@@ -1,0 +1,43 @@
+line-length = 88
+target-version = "py310"
+
+[lint]
+select = [
+    "F",   # 基础错误（必须）
+    "E",   # 基础规范（部分）
+    "I",   # import 排序
+    "B",   # bug 风险
+    "UP",  # 现代 Python
+    "SIM", # 简化代码
+    "RUF", # Ruff 特有高价值规则
+    "C90", # 复杂度控制
+    "ARG", # 未使用参数
+
+    "PLR",
+    "TRY",
+    "PERF",
+    "PTH",
+    "RET",
+]
+
+ignore = [
+    # "RET054",
+    # "UP017",
+    # "F722",   # Conflicts with array typing.
+    # "T201",   # We use print statements.
+    # "PD008",  # Lots of false positives.
+    # "ISC001", # Disabling to support ruff format.
+    # "LOG015", # Use logger.info.
+]
+
+[lint.isort]
+force-sort-within-sections = true
+known-first-party = ["rbot", "openpi", "lerobot"]
+# known-first-party = ["your_project_name"]
+# known-third-party = ["wandb"]
+
+[format]
+exclude = ["third_party"]
+quote-style = "single"
+indent-style = "space"
+line-ending = "auto"

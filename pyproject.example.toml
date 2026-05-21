@@ -1,0 +1,67 @@
+[project]
+name = "rbot"
+version = "0.1.0"
+description = ""
+# readme = "README.md"
+requires-python = "==3.12.*"
+# license = { file = "LICENSE" }
+dependencies = [
+    "torch==2.4.1",
+    "torchvision",
+
+    "openpi",
+    "lerobot",
+
+    "numpy==1.26.4",
+    "colorama",
+    "opencv-python",
+    "termcolor",
+    "scipy",
+    "einops",
+
+]
+
+[dependency-groups]
+dev = [
+    "ruff",
+    "pre-commit",
+    "matplotlib",
+    "nvitop",
+    "ipdb",
+    "tensorboard",
+    "xprof",
+]
+deploy = ["pyrealsense2", "flexivrdk==1.7.0"]
+
+
+[tool.uv]
+default-groups = ["dev", "deploy"]
+environments = ["sys_platform == 'linux'"]
+
+[tool.uv.sources]
+torch = [{ index = "pytorch" }]
+torchvision = [{ index = "pytorch" }]
+# xformers = [{ index = "pytorch-cu121" }]
+# pytorch3d = { url = "https://dl.fbaipublicfiles.com/pytorch3d/packaging/wheels/py310_cu121_pyt240/pytorch3d-0.7.8-cp310-cp310-linux_x86_64.whl" }
+
+openpi = { path = "third_party/openpi", editable = true }
+lerobot = { path = "third_party/lerobot010", editable = true }
+
+[[tool.uv.index]]
+url = "https://mirrors.tuna.tsinghua.edu.cn/pypi/web/simple/"
+default = true
+
+# [[tool.uv.index]]
+# name = "pytorch-cu121"
+# url = "https://download.pytorch.org/whl/cu121"
+# explicit = true
+
+
+[[tool.uv.index]]
+name = "pytorch"
+url = "https://download.pytorch.org/whl/cu124"
+explicit = true
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"

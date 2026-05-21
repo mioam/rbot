@@ -1,0 +1,22 @@
+# third_party/
+# sigma_sdk/
+outputs/
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+.venv
+.envrc
+/pyproject.toml
+
+/third_party/3D-Diffusion-Policy
+/third_party/lerobot052
+
+/checkpoints
+/wandb
+/playground
+/profile-data
+
+uv.lock
