@@ -20,6 +20,7 @@ import openpi.models.tokenizer as _tokenizer
 import openpi.policies.aloha_policy as aloha_policy
 import openpi.policies.droid_policy as droid_policy
 import openpi.policies.libero_policy as libero_policy
+import openpi.policies.my_policy as my_policy
 import openpi.shared.download as _download
 import openpi.shared.normalize as _normalize
 import openpi.training.droid_rlds_dataset as droid_rlds_dataset
@@ -241,13 +242,11 @@ class LeRobotAlohaDataConfig(DataConfigFactory):
     repack_transforms: tyro.conf.Suppress[_transforms.Group] = dataclasses.field(
         default=_transforms.Group(
             inputs=[
-                _transforms.RepackTransform(
-                    {
-                        "images": {"cam_high": "observation.images.top"},
-                        "state": "observation.state",
-                        "actions": "action",
-                    }
-                )
+                _transforms.RepackTransform({
+                    "images": {"cam_high": "observation.images.top"},
+                    "state": "observation.state",
+                    "actions": "action",
+                })
             ]
         )
     )
@@ -300,15 +299,13 @@ class LeRobotLiberoDataConfig(DataConfigFactory):
         # The repack transform simply remaps key names here.
         repack_transform = _transforms.Group(
             inputs=[
-                _transforms.RepackTransform(
-                    {
-                        "observation/image": "image",
-                        "observation/wrist_image": "wrist_image",
-                        "observation/state": "state",
-                        "actions": "actions",
-                        "prompt": "prompt",
-                    }
-                )
+                _transforms.RepackTransform({
+                    "observation/image": "image",
+                    "observation/wrist_image": "wrist_image",
+                    "observation/state": "state",
+                    "actions": "actions",
+                    "prompt": "prompt",
+                })
             ]
         )
 
@@ -382,16 +379,14 @@ class RLDSDroidDataConfig(DataConfigFactory):
     def create(self, assets_dirs: pathlib.Path, model_config: _model.BaseModelConfig) -> DataConfig:
         repack_transform = _transforms.Group(
             inputs=[
-                _transforms.RepackTransform(
-                    {
-                        "observation/exterior_image_1_left": "observation/image",
-                        "observation/wrist_image_left": "observation/wrist_image",
-                        "observation/joint_position": "observation/joint_position",
-                        "observation/gripper_position": "observation/gripper_position",
-                        "actions": "actions",
-                        "prompt": "prompt",
-                    }
-                )
+                _transforms.RepackTransform({
+                    "observation/exterior_image_1_left": "observation/image",
+                    "observation/wrist_image_left": "observation/wrist_image",
+                    "observation/joint_position": "observation/joint_position",
+                    "observation/gripper_position": "observation/gripper_position",
+                    "actions": "actions",
+                    "prompt": "prompt",
+                })
             ]
         )
 
@@ -434,17 +429,15 @@ class LeRobotDROIDDataConfig(DataConfigFactory):
     def create(self, assets_dirs: pathlib.Path, model_config: _model.BaseModelConfig) -> DataConfig:
         repack_transform = _transforms.Group(
             inputs=[
-                _transforms.RepackTransform(
-                    {
-                        "observation/exterior_image_1_left": "exterior_image_1_left",
-                        "observation/exterior_image_2_left": "exterior_image_2_left",
-                        "observation/wrist_image_left": "wrist_image_left",
-                        "observation/joint_position": "joint_position",
-                        "observation/gripper_position": "gripper_position",
-                        "actions": "actions",
-                        "prompt": "prompt",
-                    }
-                )
+                _transforms.RepackTransform({
+                    "observation/exterior_image_1_left": "exterior_image_1_left",
+                    "observation/exterior_image_2_left": "exterior_image_2_left",
+                    "observation/wrist_image_left": "wrist_image_left",
+                    "observation/joint_position": "joint_position",
+                    "observation/gripper_position": "gripper_position",
+                    "actions": "actions",
+                    "prompt": "prompt",
+                })
             ]
         )
         # We assume joint *velocity* actions, so we should *not* apply an additional delta transform.
@@ -778,17 +771,15 @@ _CONFIGS = [
             default_prompt="uncap the pen",
             repack_transforms=_transforms.Group(
                 inputs=[
-                    _transforms.RepackTransform(
-                        {
-                            "images": {
-                                "cam_high": "observation.images.cam_high",
-                                "cam_left_wrist": "observation.images.cam_left_wrist",
-                                "cam_right_wrist": "observation.images.cam_right_wrist",
-                            },
-                            "state": "observation.state",
-                            "actions": "action",
-                        }
-                    )
+                    _transforms.RepackTransform({
+                        "images": {
+                            "cam_high": "observation.images.cam_high",
+                            "cam_left_wrist": "observation.images.cam_left_wrist",
+                            "cam_right_wrist": "observation.images.cam_right_wrist",
+                        },
+                        "state": "observation.state",
+                        "actions": "action",
+                    })
                 ]
             ),
         ),
@@ -807,17 +798,15 @@ _CONFIGS = [
             default_prompt="uncap the pen",
             repack_transforms=_transforms.Group(
                 inputs=[
-                    _transforms.RepackTransform(
-                        {
-                            "images": {
-                                "cam_high": "observation.images.cam_high",
-                                "cam_left_wrist": "observation.images.cam_left_wrist",
-                                "cam_right_wrist": "observation.images.cam_right_wrist",
-                            },
-                            "state": "observation.state",
-                            "actions": "action",
-                        }
-                    )
+                    _transforms.RepackTransform({
+                        "images": {
+                            "cam_high": "observation.images.cam_high",
+                            "cam_left_wrist": "observation.images.cam_left_wrist",
+                            "cam_right_wrist": "observation.images.cam_right_wrist",
+                        },
+                        "state": "observation.state",
+                        "actions": "action",
+                    })
                 ]
             ),
         ),
@@ -970,6 +959,110 @@ _CONFIGS = [
     *polaris_config.get_polaris_configs(),
 ]
 
+
+##########################################################
+
+
+@dataclasses.dataclass(frozen=True)
+class LeRobotMyDataConfig(DataConfigFactory):
+    """
+    This config is used to configure transforms that are applied at various parts of the data pipeline.
+    For your own dataset, you can copy this class and modify the transforms to match your dataset based on the
+    comments below.
+    """
+
+    state_config: list[str] = dataclasses.field(default_factory=list)
+    action_config: list[str] = dataclasses.field(default_factory=list)
+    extra_delta_transform: bool = False
+
+    @override
+    def create(self, assets_dirs: pathlib.Path, model_config: _model.BaseModelConfig) -> DataConfig:
+        repack_transform = _transforms.Group(
+            inputs=[
+                # _transforms.RepackTransform({})
+            ]
+        )
+
+        data_transforms = _transforms.Group(
+            inputs=[
+                my_policy.MyInputs(
+                    model_type=model_config.model_type,
+                    state_config=self.state_config,
+                    action_config=self.action_config,
+                ),
+            ],
+            outputs=[my_policy.MyOutputs(action_config=self.action_config)],
+        )
+
+        if self.extra_delta_transform:
+            delta_action_mask = _transforms.make_bool_mask(7)
+            data_transforms = data_transforms.push(
+                inputs=[_transforms.DeltaActions(delta_action_mask)],
+                outputs=[_transforms.AbsoluteActions(delta_action_mask)],
+            )
+
+        model_transforms = ModelTransformFactory()(model_config)
+
+        return dataclasses.replace(
+            self.create_base_config(assets_dirs, model_config),
+            repack_transforms=repack_transform,
+            data_transforms=data_transforms,
+            model_transforms=model_transforms,
+            # action_sequence_keys=("action",),
+        )
+
+
+PI0 = TrainConfig(
+    name="pi0_my",
+    model=pi0_config.Pi0Config(),
+    data=LeRobotMyDataConfig(
+        repo_id="miaom/carrot_fix_pot",
+        base_config=DataConfig(
+            prompt_from_task=True,
+        ),
+        extra_delta_transform=False,
+    ),
+    weight_loader=weight_loaders.CheckpointWeightLoader("gs://openpi-assets/checkpoints/pi0_base/params"),
+    num_train_steps=20_000,
+    batch_size=32,
+)
+PI05 = TrainConfig(
+    name="pi05_my",
+    model=pi0_config.Pi0Config(pi05=True, action_horizon=10, discrete_state_input=False),
+    data=LeRobotMyDataConfig(
+        repo_id="miaom/carrot_fix_pot",
+        base_config=DataConfig(prompt_from_task=True),
+        extra_delta_transform=False,
+    ),
+    batch_size=48,
+    optimizer=_optimizer.AdamW(clip_gradient_norm=1.0),
+    weight_loader=weight_loaders.CheckpointWeightLoader("gs://openpi-assets/checkpoints/pi05_base/params"),
+    num_train_steps=20_000,
+)
+PI0lora = TrainConfig(
+    name="pi0_my_lora",
+    model=pi0_config.Pi0Config(paligemma_variant="gemma_2b_lora", action_expert_variant="gemma_300m_lora"),
+    data=LeRobotMyDataConfig(
+        repo_id="miaom/carrot_fix_pot",
+        base_config=DataConfig(prompt_from_task=True),
+        extra_delta_transform=False,
+    ),
+    weight_loader=weight_loaders.CheckpointWeightLoader("gs://openpi-assets/checkpoints/pi0_base/params"),
+    num_train_steps=20_000,
+    batch_size=32,
+    freeze_filter=pi0_config.Pi0Config(
+        paligemma_variant="gemma_2b_lora", action_expert_variant="gemma_300m_lora"
+    ).get_freeze_filter(),
+    # Turn off EMA for LoRA finetuning.
+    ema_decay=None,
+)
+
+
+# 仅测试
+_CONFIGS.extend([PI0, PI05, PI0lora])
+
+
+###########################################################
 if len({config.name for config in _CONFIGS}) != len(_CONFIGS):
     raise ValueError("Config names must be unique.")
 _CONFIGS_DICT = {config.name: config for config in _CONFIGS}

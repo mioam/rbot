@@ -76,9 +76,9 @@ def _load_weights_and_validate(loader: _weight_loaders.WeightLoader, params_shap
     at.check_pytree_equality(expected=params_shape, got=loaded_params, check_shapes=True, check_dtypes=True)
 
     # Remove jax.ShapeDtypeStruct from the loaded params. This makes sure that only the loaded params are returned.
-    return traverse_util.unflatten_dict(
-        {k: v for k, v in traverse_util.flatten_dict(loaded_params).items() if not isinstance(v, jax.ShapeDtypeStruct)}
-    )
+    return traverse_util.unflatten_dict({
+        k: v for k, v in traverse_util.flatten_dict(loaded_params).items() if not isinstance(v, jax.ShapeDtypeStruct)
+    })
 
 
 @at.typecheck
@@ -272,9 +272,14 @@ def main(config: _config.TrainConfig):
         if (step % config.save_interval == 0 and step > start_step) or step == config.num_train_steps - 1:
             _checkpoints.save_state(checkpoint_manager, train_state, data_loader, step)
 
+        # if step == 100:
+        #     jax.profiler.stop_trace()
+
     logging.info("Waiting for checkpoint manager to finish")
     checkpoint_manager.wait_until_finished()
 
 
 if __name__ == "__main__":
+    # jax.profiler.start_trace("./profile-data")
+
     main(_config.cli())

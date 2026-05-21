@@ -86,8 +86,9 @@ def create_rlds_dataloader(
     return data_loader, num_batches
 
 
-def main(config_name: str, max_frames: int | None = None):
+def main(config_name: str, repo_id: str, max_frames: int | None = None):
     config = _config.get_config(config_name)
+    # config.data.repo_id = repo_id
     data_config = config.data.create(config.assets_dirs, config.model)
 
     if data_config.rlds_data_dir is not None:
@@ -114,4 +115,9 @@ def main(config_name: str, max_frames: int | None = None):
 
 
 if __name__ == "__main__":
+    import jax
+
+    jax.profiler.start_trace("./profile-data")
+
     tyro.cli(main)
+    jax.profiler.stop_trace()
