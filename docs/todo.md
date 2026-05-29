@@ -15,7 +15,7 @@
 - 尝试支持dp
 - record的时候大家好像都是获得上一帧，可能可以改改？
 
-- 支持更加分丰富的训练参数
+- 支持更加丰富的训练参数
     - 使用joint/tcppose(quat)/tcppose(eular)，是否使用delta，以及delta的具体算法
     - 输出action / next tcppose / next joint，是否使用delta
     - 如何指定训练集，如何限制训练集的大小

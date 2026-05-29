@@ -72,8 +72,8 @@ class MyInputs(transforms.DataTransformFn):
     # Determines which model will be used.
     # Do not change this for your own dataset.
     model_type: _model.ModelType
-    state_config: list[str] = dataclasses.field(default_factory=["joint"])
-    action_config: str = "tcp_quat"
+    state_config: str
+    action_config: str
 
     def __call__(self, data: dict) -> dict:
         # Possibly need to parse images to uint8 (H,W,C) since LeRobot automatically
@@ -101,15 +101,15 @@ class MyInputs(transforms.DataTransformFn):
             gripper = gripper[None]
         state = []
         for key in self.state_config:
-            if key == "joint":
+            if key == "j":
                 state.append(joint)
-            elif key == "gripper":
+            elif key == "g":
                 state.append(gripper)
-            elif key == "tcp_quat":
+            elif key == "q":
                 state.append(tcp)
-            elif key == "tcp_eular":
+            elif key == "e":
                 tcp_eular = tcp.copy()
-                tcp_eular[3:] = R.from_quat(tcp[3:], scalar_first=True).as_eular()
+                tcp_eular[3:] = R.from_quat(tcp[3:], scalar_first=True).as_euler("XYZ")
                 state.append(tcp_eular)
 
         state = np.concatenate(state, 0)
@@ -134,12 +134,12 @@ class MyInputs(transforms.DataTransformFn):
         # Pad actions to the model action dimension. Keep this for your own dataset.
         # Actions are only available during training.
         if "actions" in data:
-            if self.action_config == "tcp_quat":
+            if self.action_config == "q":
                 inputs["actions"] = data["actions"]
-            elif self.action_config == "tcp_eular":
+            elif self.action_config == "e":
                 inputs["actions"] = np.concatenate([joint, gripper], 0)
                 inputs["actions"] = data["actisons"]
-            elif self.action_config == "joint":
+            elif self.action_config == "j":
                 inputs["actions"] = np.concatenate([joint, gripper], 0)
 
         # Pass the prompt (aka language instruction) to the model.

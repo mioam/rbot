@@ -3,16 +3,17 @@ Transformation utilities.
 """
 
 import functools
+from typing import Literal, get_args
 
 import numpy as np
-import pytorch3d.transforms.rotation_conversions as ptc
 import torch
 
-from rbot.common import rotation_utils as rtu
+import rbot.common.rotation_conversions as ptc
+import rbot.common.rotation_utils as rtu
 
 # quat is r, i, j, k
 
-VALID_ROTATION_REPRESENTATIONS = [
+ROTATION_REPRESENTATIONS = Literal[
     'axis_angle',
     'euler_angles',
     'quaternion',
@@ -21,6 +22,7 @@ VALID_ROTATION_REPRESENTATIONS = [
     'rotation_9d',
     'rotation_10d',
 ]
+VALID_ROTATION_REPRESENTATIONS = get_args(ROTATION_REPRESENTATIONS)
 ROTATION_REPRESENTATION_DIMS = {
     'axis_angle': 3,
     'euler_angles': 3,
@@ -32,7 +34,13 @@ ROTATION_REPRESENTATION_DIMS = {
 }
 
 
-def rotation_transform(rot, from_rep, to_rep, from_convention=None, to_convention=None):
+def rotation_transform(
+    rot,
+    from_rep: ROTATION_REPRESENTATIONS,
+    to_rep: ROTATION_REPRESENTATIONS,
+    from_convention=None,
+    to_convention=None,
+):
     """
     Transform a rotation representation into another equivalent rotation representation.
     """
@@ -80,7 +88,11 @@ def rotation_transform(rot, from_rep, to_rep, from_convention=None, to_conventio
 
 
 def xyz_rot_transform(
-    xyz_rot, from_rep, to_rep, from_convention=None, to_convention=None
+    xyz_rot,
+    from_rep: ROTATION_REPRESENTATIONS,
+    to_rep: ROTATION_REPRESENTATIONS,
+    from_convention=None,
+    to_convention=None,
 ):
     """
     Transform an xyz_rot representation into another equivalent xyz_rot representation.
@@ -120,28 +132,31 @@ def xyz_rot_transform(
     return res
 
 
-def xyz_rot_to_mat(xyz_rot, rotation_rep, rotation_rep_convention=None):
+def xyz_rot_to_mat(xyz_rot, from_rep: ROTATION_REPRESENTATIONS, from_convention=None):
     """
     Transform an xyz_rot representation under any rotation form to an unified 4x4 pose representation.
     """
     return xyz_rot_transform(
         xyz_rot,
-        from_rep=rotation_rep,
+        from_rep=from_rep,
         to_rep='matrix',
-        from_convention=rotation_rep_convention,
+        from_convention=from_convention,
     )
 
 
-def mat_to_xyz_rot(mat, rotation_rep, rotation_rep_convention=None):
+def mat_to_xyz_rot(mat, to_rep: ROTATION_REPRESENTATIONS, to_convention=None):
     """
     Transform an unified 4x4 pose representation to an xyz_rot representation under any rotation form.
     """
     return xyz_rot_transform(
         mat,
         from_rep='matrix',
-        to_rep=rotation_rep,
-        to_convention=rotation_rep_convention,
+        to_rep=to_rep,
+        to_convention=to_convention,
     )
+
+
+# 以下内容未确认
 
 
 def apply_mat_to_pose(pose, mat, rotation_rep, rotation_rep_convention=None):
@@ -161,14 +176,14 @@ def apply_mat_to_pose(pose, mat, rotation_rep, rotation_rep_convention=None):
     assert pose.shape[-1] == 3 + ROTATION_REPRESENTATION_DIMS[rotation_rep]
     pose_mat = xyz_rot_to_mat(
         xyz_rot=pose,
-        rotation_rep=rotation_rep,
-        rotation_rep_convention=rotation_rep_convention,
+        from_rep=rotation_rep,
+        from_convention=rotation_rep_convention,
     )
     res_pose_mat = mat @ pose_mat
     res_pose = mat_to_xyz_rot(
         mat=res_pose_mat,
-        rotation_rep=rotation_rep,
-        rotation_rep_convention=rotation_rep_convention,
+        to_rep=rotation_rep,
+        to_convention=rotation_rep_convention,
     )
     return res_pose
 

@@ -21,7 +21,7 @@ select = [
 ]
 
 ignore = [
-    # "RET054",
+    "RET504",
     # "UP017",
     # "F722",   # Conflicts with array typing.
     # "T201",   # We use print statements.

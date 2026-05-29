@@ -8,8 +8,9 @@ References:
                 https://github.com/utiasSTARS/bingham-rotation-learning
 """
 
-import pytorch3d.transforms.rotation_conversions as ptc
 import torch
+
+import rbot.common.rotation_conversions as ptc
 
 
 def rotation_9d_to_matrix(rotation_9d):
