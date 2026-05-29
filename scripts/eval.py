@@ -37,9 +37,6 @@ def main(ckpt: str = 'checkpoints/pi0_my/my_experiment/29999', remote=False, por
 
     while True:
         frame = agent.get_frame()
-        # obv = agent.get_observation()
-        # tcp = agent.get_tcp_pose()
-        # gripper = agent.get_gripper_width()
 
         # show(frame)
         for key in frame:
@@ -48,31 +45,11 @@ def main(ckpt: str = 'checkpoints/pi0_my/my_experiment/29999', remote=False, por
                 resized_img = center_crop_resize(Image.fromarray(img), SIZE)
                 frame[key] = np.array(resized_img, dtype=np.uint8)
         frame['prompt'] = ''
-        # observation = {
-        #     "observation/state-tcp": tcp.astype(np.float32),
-        #     "observation/state-gripper": np.array([gripper]).astype(np.float32),
-        #     "observation/image": colors[0],
-        #     # "observation/wrist_image": np.random.randint(256, size=(224, 224, 3), dtype=np.uint8),
-        #     "prompt": "put the carrot into the pot",
-        # }
-        # import jax
+        data = policy.infer(frame)
+        action_chunk = data['actions']
 
-        # jax.profiler.start_trace('./profile-data')
-
-        action_chunk = policy.infer(frame)['actions']
-
-        # jax.profiler.stop_trace()
-
-        # # 我的一个问题：quat 顺序
-        # print(action_chunk.shape)
-        # xyz = action_chunk[:, 3:6].copy()
-        # w = action_chunk[:, 6].copy()
-        # action_chunk[:, 3] = w
-        # action_chunk[:, 4:7] = xyz
-
-        # ipdb.set_trace()
         state = True
-        for i in range(10):
+        for i in range(5):
             agent.set_tcp_pose(action_chunk[i, :-1], blocking=True)
             agent.set_gripper_width(action_chunk[i, -1])
             # if state != (action_chunk[i, -1] > 500):

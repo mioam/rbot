@@ -13,6 +13,8 @@ import jax.numpy as jnp
 import numpy as np
 import optax
 import tqdm_loggable.auto as tqdm
+import tyro
+import wandb
 
 import openpi.models.model as _model
 from openpi.shared import nnx_utils
@@ -24,7 +26,7 @@ import openpi.training.data_loader as _data_loader
 import openpi.training.optimizer as _optimizer
 import openpi.training.utils as training_utils
 import openpi.training.weight_loaders as _weight_loaders
-import wandb
+from rbot.openpi.config_builder import Config, save_config
 
 
 def init_logging():
@@ -233,7 +235,7 @@ def train_step(
     return new_state, info
 
 
-def main(config: _config.TrainConfig):
+def main(config: _config.TrainConfig, raw_config: Config):
     init_logging()
     logging.info(f'Running on: {platform.node()}')
 
@@ -261,6 +263,9 @@ def main(config: _config.TrainConfig):
         overwrite=config.overwrite,
         resume=config.resume,
     )
+    # 保存config参数
+    save_config(raw_config, config.checkpoint_dir / 'config.yaml')
+
     init_wandb(config, resuming=resuming, enabled=config.wandb_enabled)
 
     data_loader = _data_loader.create_data_loader(
@@ -344,5 +349,7 @@ if __name__ == '__main__':
 
     from rbot.openpi.config import build_config
 
-    main(build_config())
-    # main(_config.cli())
+    raw_config = tyro.cli(Config)
+    # save_config(raw_config,  Path('config.yaml'))
+
+    main(build_config(raw_config), raw_config)

@@ -31,3 +31,4 @@
     - 传入episode_index
     - 读取对应的norm stats
     - profile
+- 现在这个config有点垃圾。他支持靠default生成配置。对于做对照实验非常麻烦，我应该自己写一个general的config，然后从我的config推到出openpi的config。我自己的config应该保存在ckpt旁边，这样eval的时候也比较方便。这个东西应该叫config builder？搞一个类

@@ -18,6 +18,7 @@ from openpi.training.config import (
 )
 import openpi.transforms as _transforms
 from rbot.common.transformation import mat_to_xyz_rot, xyz_rot_to_mat, xyz_rot_transform
+from rbot.openpi.config_builder import Config
 
 STATE_MAPPING = {
     'q': 'quaterion (scalar first)',
@@ -118,10 +119,15 @@ class MyInputs(transforms.DataTransformFn):
                 state.append(tcp_rot6d)
 
         state = np.concatenate(state, 0)
+        state_matrix = xyz_rot_to_mat(
+            data['observation.state.tcp'],
+            from_rep='quaternion',
+        )
 
         # Create inputs dict. Do not change the keys in the dict below.
         inputs = {
             'state': state,
+            'state_matrix': state_matrix,
             'image': {
                 'base_0_rgb': base_image,
                 'left_wrist_0_rgb': wrist_image,
@@ -166,11 +172,6 @@ class MyInputs(transforms.DataTransformFn):
                 elif self.action_config == 'j':
                     raise NotImplementedError
             else:
-                state_tcp = data['observation.state.tcp']
-                state_matrix = xyz_rot_to_mat(
-                    state_tcp,
-                    from_rep='quaternion',
-                )
                 tcp_matrix = xyz_rot_to_mat(
                     tcp_quat,
                     from_rep='quaternion',
@@ -225,8 +226,44 @@ class MyOutputs(transforms.DataTransformFn):
         # dimension, we need to now parse out the correct number of actions in the return dict.
         # For Libero, we only return the first 7 actions (since the rest is padding).
         # For your own dataset, replace `7` with the action dimension of your dataset.
-        raise NotImplementedError
-        return {'actions': np.asarray(data['actions'][:, :8])}
+        # return data
+        # data['actions] 是模型预测的，和Inputs中返回的actions一致。
+        # 这个东西需要复原delta和旋转的表示，变成xyz quat gripper的原始action
+        if self.action_config == 'q':
+            actions = np.asarray(data['actions'][:, :8])
+            gripper = actions[:, -1]
+            tcp_matrix = xyz_rot_to_mat(
+                actions[:, :7],
+                from_rep='quaternion',
+            )
+        elif self.action_config == 'e':
+            actions = np.asarray(data['actions'][:, :7])
+            gripper = actions[:, -1]
+            tcp_matrix = xyz_rot_to_mat(
+                actions[:, :6],
+                from_rep='euler_angles',
+                from_convention='XYZ',
+            )
+        elif self.action_config == 'r':
+            actions = np.asarray(data['actions'][:, :10])
+            gripper = actions[:, -1]
+            tcp_matrix = xyz_rot_to_mat(
+                actions[:, :9],
+                from_rep='rotation_6d',
+            )
+        elif self.action_config == 'j':
+            raise NotImplementedError
+
+        if self.delta:
+            state_matrix = data['state_matrix']
+            tcp_matrix = state_matrix @ tcp_matrix
+
+        tcp_quat = mat_to_xyz_rot(
+            tcp_matrix,
+            to_rep='quaternion',
+        )
+
+        return {'actions': np.concatenate([tcp_quat, gripper[..., None]], -1)}
 
 
 @dataclasses.dataclass(frozen=True)
@@ -285,7 +322,7 @@ class LeRobotMyDataConfig(DataConfigFactory):
         )
 
 
-def build_config():
+def _build_config():
     BATCH_SIZE = 80
     STEPS = 10_000
     NUM_WORKER = 30
@@ -343,3 +380,55 @@ def build_config():
     assert type(config.data) is LeRobotMyDataConfig
     config = dataclasses.replace(config, name=f'{config.name}_{config.data.name}')
     return config
+
+
+def build_config(config: Config):
+    if config.model.name == 'pi0':
+        return TrainConfig(
+            exp_name=config.exp_name,
+            name='pi0',
+            model=pi0_config.Pi0Config(),
+            data=LeRobotMyDataConfig(
+                repo_id=config.train.repo_id,
+                base_config=DataConfig(
+                    prompt_from_task=True,
+                ),
+                delta=config.data.delta,
+                state=config.data.state,
+                action=config.data.action,
+                # assets=AssetsConfig(asset_id=data_name),
+            ),
+            weight_loader=weight_loaders.CheckpointWeightLoader(
+                'gs://openpi-assets/checkpoints/pi0_base/params'
+            ),
+            num_train_steps=config.train.num_steps,
+            batch_size=config.train.batch_size,
+            num_workers=30,
+        )
+    if config.model.name == 'pi05':
+        return TrainConfig(
+            exp_name=config.exp_name,
+            name='pi05',
+            model=pi0_config.Pi0Config(
+                pi05=True,
+                # action_horizon=16,
+                # discrete_state_input=False,
+            ),
+            data=LeRobotMyDataConfig(
+                repo_id=config.train.repo_id,
+                base_config=DataConfig(
+                    prompt_from_task=True,
+                ),
+                delta=config.data.delta,
+                state=config.data.state,
+                action=config.data.action,
+                # assets=AssetsConfig(asset_id=data_name),
+            ),
+            weight_loader=weight_loaders.CheckpointWeightLoader(
+                'gs://openpi-assets/checkpoints/pi05_base/params'
+            ),
+            num_train_steps=config.train.num_steps,
+            batch_size=config.train.batch_size,
+            num_workers=30,
+        )
+    raise ValueError()
