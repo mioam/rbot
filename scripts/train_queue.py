@@ -8,20 +8,20 @@ import time
 
 import pynvml
 
-AVAILABLE_GPUS = [1, 2, 3, 4]
+AVAILABLE_GPUS = [1, 2, 3, 5, 6, 7]
 GPUS_PER_TASK = 2
 LOG_DIR = Path('logs')  # 存放每个实验日志的目录
 EXP_NAME = f'exp-{datetime.now().strftime("%y%m%d-%H%M%S")}'
 
 TASKS = [
-    # f'uv run scripts/compute_norm_stats.py {base} '
-    # f'--data.repo_id {repo_id} --data.state {state} --data.action {action} --data.delta {delta} --exp_name {EXP_NAME}'
-    f'XLA_PYTHON_CLIENT_MEM_FRACTION=0.95 uv run scripts/train.py {base} '
-    f'--data.repo_id {repo_id} --data.state {state} --data.action {action} --data.delta {delta} --exp_name {EXP_NAME}'
-    for base in ['PI0', 'PI05']
+    # f'uv run scripts/compute_norm_stats.py --model.name {base} '
+    # f'--train.repo_id {repo_id} --data.state {state} --data.action {action} --data.delta {delta} --exp-name {EXP_NAME}'
+    f'XLA_PYTHON_CLIENT_MEM_FRACTION=0.95 uv run scripts/train.py --model.name {base} '
+    f'--train.repo_id {repo_id} --data.state {state} --data.action {action} --data.delta {delta} --exp-name {EXP_NAME}'
+    for base in ['pi0', 'pi05']
     for repo_id in ['miaom/carrot_fix_pot']
-    for state in ['jg']
-    for action in ['r']
+    for state in ['rg', 'qg', 'eg']
+    for action in ['r', 'q', 'e']
     for delta in [True, False]
 ]
 

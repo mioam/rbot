@@ -7,12 +7,14 @@ to the config assets directory.
 
 import numpy as np
 import tqdm
+import tyro
 
 from openpi import transforms
 import openpi.models.model as _model
 from openpi.shared import normalize
 import openpi.training.config as _config
 import openpi.training.data_loader as _data_loader
+from rbot.openpi.config_builder import Config
 
 
 class RemoveStrings(transforms.DataTransformFn):
@@ -127,4 +129,6 @@ def main(config: _config.TrainConfig, max_frames=None):
 if __name__ == '__main__':
     from rbot.openpi.config import build_config
 
-    main(build_config())
+    raw_config = tyro.cli(Config)
+
+    main(build_config(raw_config))

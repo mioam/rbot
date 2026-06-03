@@ -386,7 +386,7 @@ def build_config(config: Config):
     if config.model.name == 'pi0':
         return TrainConfig(
             exp_name=config.exp_name,
-            name='pi0',
+            name=config.name,
             model=pi0_config.Pi0Config(),
             data=LeRobotMyDataConfig(
                 repo_id=config.train.repo_id,
@@ -408,7 +408,7 @@ def build_config(config: Config):
     if config.model.name == 'pi05':
         return TrainConfig(
             exp_name=config.exp_name,
-            name='pi05',
+            name=config.name,
             model=pi0_config.Pi0Config(
                 pi05=True,
                 # action_horizon=16,

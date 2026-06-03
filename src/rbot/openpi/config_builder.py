@@ -1,15 +1,15 @@
 # 这个文件用于简化对照实验的config设置。从原始的config中抽离关键参数
 from dataclasses import dataclass
-from os import PathLike
 from pathlib import Path
 from typing import cast
 
 from omegaconf import OmegaConf
-from openpi.training.config import TrainConfig
+
 
 @dataclass
 class _ModelConfig:
     name: str
+
 
 @dataclass
 class _TrainConfig:
@@ -17,15 +17,18 @@ class _TrainConfig:
     num_steps: int = 10_000
     repo_id: str = ''
 
+
 @dataclass
 class _DataConfig:
-    state:str
-    action:str
-    delta:bool
+    state: str
+    action: str
+    delta: bool
+
 
 @dataclass
 class _InferConfig:
     ckpt_dir: str = ''
+
 
 @dataclass
 class Config:
@@ -35,6 +38,9 @@ class Config:
     data: _DataConfig
     infer: _InferConfig
 
+    @property
+    def name(self):
+        return f'{self.model.name}_{self.data.state}_{self.data.action}_{"rel" if self.data.delta else "raw"}'
 
 
 def save_config(cfg: Config, path: str | Path):
