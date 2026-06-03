@@ -219,19 +219,19 @@ class FlexivRobot:
         else:
             self.switch_mode('cart_impedance_online')
             self.robot.SendCartesianMotionForce(np.array(tcp), [0] * 6, 0.1)
-            for i in range(10):
+            for i in range(100):
                 time.sleep(0.1)
                 tcpPose, jointPose, tcpVel, jointVel = self.get_robot_state()
                 diff = np.linalg.norm(np.array(tcpPose[:3]) - np.array(tcp[:3]))
                 from scipy.spatial.transform import Rotation as R
 
                 diff2 = (
-                    R.from_quat(np.array(tcpPose[3:]))
-                    * R.from_quat(np.array(tcp[3:])).inv()
+                    R.from_quat(np.array(tcpPose[3:]), scalar_first=True)
+                    * R.from_quat(np.array(tcp[3:]), scalar_first=True).inv()
                 ).magnitude()
 
-                print(diff, diff2)
-                if diff < 0.1 and diff2 < 0.3:
+                print(f'{diff} m, {diff2} rad')
+                if diff < 0.01 and diff2 < 0.01:
                     break
 
     def send_joint_pose(self, q):

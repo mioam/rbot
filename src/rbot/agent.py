@@ -84,7 +84,7 @@ class Agent:
 
     def set_gripper_width(self, width, force=30, blocking=False):
         # width = 1000 if width > 500 else 0
-        print(width)
+        # print(width)
         self.gripper.move(width, force=force)
         self.last_width = width
         if blocking:

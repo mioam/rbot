@@ -132,8 +132,11 @@ class SafeCV2:
         self.thread.start()
         atexit.register(self._cleanup)  # 程序退出自动清理
 
-    def imshow(self, window_name, frame):
-        """线程安全的imshow"""
+    def imshow(self, window_name, frame: np.ndarray):
+        """
+        线程安全的imshow
+        frame: np.ndarray (H, W, C), RGB
+        """
         with self.lock:
             self.frames[window_name] = frame.copy()
         self.event.set()
