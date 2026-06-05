@@ -105,6 +105,7 @@ def xyz_rot_transform(
     )
 
     xyz_rot = np.array(xyz_rot)
+    dtype = xyz_rot.dtype
     if from_rep == to_rep and from_convention == to_convention:
         return xyz_rot
 
@@ -125,7 +126,7 @@ def xyz_rot_transform(
     )
     if to_rep != 'matrix':
         return np.concatenate((xyz, rot), axis=-1)
-    res = np.zeros(xyz.shape[:-1] + (4, 4), dtype=np.float32)
+    res = np.zeros(xyz.shape[:-1] + (4, 4), dtype=dtype)
     res[..., :3, :3] = rot
     res[..., :3, 3] = xyz
     res[..., 3, 3] = 1
@@ -260,3 +261,13 @@ def trans_rot_mat(offsets, angles):
     offsets = (res[:3, :3] @ np.array(offsets).unsqueeze(-1)).squeeze()
     res[:3, 3] = offsets
     return res
+
+
+def rotation_distance(R_rel, degrees=False):
+    tr = np.trace(R_rel)
+    cos_theta = (tr - 1.0) / 2.0
+    cos_theta = np.clip(cos_theta, -1.0, 1.0)
+    theta = np.arccos(cos_theta)
+    if degrees:
+        return np.degrees(theta)
+    return theta
