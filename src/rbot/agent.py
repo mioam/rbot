@@ -26,8 +26,7 @@ class Agent:
         self.gripper = FlexivGripper(self.robot)
 
         self.camera = [
-            CameraD400(camera_serial, fps=30, res=(640, 480))
-            for camera_serial in camera_serials
+            CameraD400(camera_serial, fps=30) for camera_serial in camera_serials
         ]
         self.camera_serials = camera_serials
         self.use_hand = False

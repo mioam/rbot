@@ -7,9 +7,12 @@ import tyro
 
 from rbot.agent import Agent
 from rbot.common.image_util import center_crop_resize
+from rbot.common.precise_sleep import precise_wait
+from rbot.record import RawDataset
 from rbot.utils.tools import imshow
 
 SIZE = [256, 256]
+FPS = 10
 
 
 def main(ckpt: str = 'checkpoints/pi0_my/my_experiment/29999', remote=False, port=8000):
@@ -34,30 +37,41 @@ def main(ckpt: str = 'checkpoints/pi0_my/my_experiment/29999', remote=False, por
         policy = websocket_client_policy.WebsocketClientPolicy(
             host='localhost', port=port
         )
+    dataset = RawDataset(Path('/ssd1/mzc/data/replay'), exist_ok=True)
+    dataset.new_demo()
+    try:
+        while True:
+            frame = agent.get_frame()
 
-    while True:
-        frame = agent.get_frame()
+            # show(frame)
+            for key in frame:
+                if 'images' in key:
+                    img = frame[key]
+                    resized_img = center_crop_resize(Image.fromarray(img), SIZE)
+                    frame[key] = np.array(resized_img, dtype=np.uint8)
 
-        # show(frame)
-        for key in frame:
-            if 'images' in key:
-                img = frame[key]
-                resized_img = center_crop_resize(Image.fromarray(img), SIZE)
-                frame[key] = np.array(resized_img, dtype=np.uint8)
+                    imshow(key, frame[key])
+            frame['prompt'] = ''
+            data = policy.infer(frame)
+            action_chunk = data['actions']
 
-                imshow(key, frame[key])
-        frame['prompt'] = ''
-        data = policy.infer(frame)
-        action_chunk = data['actions']
+            state = True
+            for i in range(10):
+                frame_start = time.monotonic()
+                frame1 = agent.get_frame()
+                print(action_chunk[i])
+                agent.set_tcp_pose(action_chunk[i, :-1])
+                agent.set_gripper_width(action_chunk[i, -1])
+                dataset.add_frame(frame1)
 
-        state = True
-        for i in range(10):
-            print(action_chunk[i])
-            agent.set_tcp_pose(action_chunk[i, :-1], blocking=True)
-            agent.set_gripper_width(action_chunk[i, -1])
-            # if state != (action_chunk[i, -1] > 500):
-            #     state = not state
-            #     agent.set_gripper_width(1000 if state else 0)
+                precise_wait(frame_start + 1.0 / FPS)
+                # if state != (action_chunk[i, -1] > 500):
+                #     state = not state
+                #     agent.set_gripper_width(1000 if state else 0)
+    except KeyboardInterrupt:
+        print('KeyboardInterrupt!')
+    finally:
+        dataset.save()
 
 
 if __name__ == '__main__':
