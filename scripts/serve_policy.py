@@ -11,7 +11,7 @@ from rbot.openpi.config import build_config
 from rbot.openpi.config_builder import load_config
 
 
-def main(ckpt: Path, default_prompt='', port=8000) -> None:
+def main(ckpt: Path, default_prompt='', port=8000, keep=False) -> None:
     config_raw = load_config(ckpt / '..' / 'config.yaml')
     config = build_config(config_raw)
 
@@ -34,7 +34,7 @@ def main(ckpt: Path, default_prompt='', port=8000) -> None:
         port=port,
         metadata=policy_metadata,
     )
-    server.serve_forever()
+    server.serve_forever(timeout=None if keep else 3600)
 
 
 if __name__ == '__main__':
