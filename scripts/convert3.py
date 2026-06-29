@@ -8,7 +8,7 @@ from termcolor import cprint
 import tyro
 
 from lerobot.common.datasets.lerobot_dataset import LeRobotDataset
-from rbot.common.image_util import center_crop_resize
+from rbot.common.image_util import crop_resize
 
 
 class RawDatasetReader:
@@ -23,10 +23,10 @@ class RawDatasetReader:
         ])
         self.target_size = [256, 256]
 
-    def get_image(self, img_path: Path):
+    def get_image(self, img_path: Path, crop_type: str):
 
         img = Image.open(img_path)
-        img = center_crop_resize(img, self.target_size)
+        img = crop_resize(img, self.target_size, crop_type=crop_type)
         img = np.array(img)
         return img
 
@@ -37,7 +37,7 @@ class RawDatasetReader:
             if p.is_dir():
                 if 'depth' in p.name:
                     continue
-                img = self.get_image(p / f'{0:05}.png')
+                img = self.get_image(p / f'{0:05}.png', crop_type='center')
                 print(f'{p.name}: {img.shape}, {img.dtype}')
                 self.cam_features[p.name] = {
                     'dtype': 'image',
@@ -96,7 +96,7 @@ class RawDatasetReader:
             # 自动寻找对应图片目录
             for key in self.cam_features:
                 img_path = demo_dir / key / f'{idx:05d}.png'
-                img = self.get_image(img_path)
+                img = self.get_image(img_path, crop_type=self.crop_type[key])
                 frame[key] = img
 
             yield frame
@@ -104,6 +104,10 @@ class RawDatasetReader:
 
 def main(path: str, name: str, FPS=10):
     reader = RawDatasetReader(path)
+    reader.crop_type = {
+        'observation.images.244222073667': 'right',
+        'observation.images.750612070265': 'center',
+    }
     features = reader.get_feature()
 
     REPO_NAME = f'miaom/{name}'

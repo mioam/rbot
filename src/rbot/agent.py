@@ -21,6 +21,7 @@ class Agent:
     ):
         print('Init robot, gripper, and camera.')
         self.robot = FlexivRobot(robot_ip)
+        self.robot.init_pose = self.ready_pose
         self.robot.send_tcp_pose(self.ready_pose, slow=True)
         time.sleep(2)
         self.gripper = FlexivGripper(self.robot)

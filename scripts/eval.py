@@ -6,7 +6,7 @@ from PIL import Image
 import tyro
 
 from rbot.agent import Agent
-from rbot.common.image_util import center_crop_resize
+from rbot.common.image_util import crop_resize
 from rbot.common.precise_sleep import precise_wait
 from rbot.record import RawDataset
 from rbot.utils.tools import imshow
@@ -47,7 +47,7 @@ def main(ckpt: str = 'checkpoints/pi0_my/my_experiment/29999', remote=False, por
             for key in frame:
                 if 'images' in key:
                     img = frame[key]
-                    resized_img = center_crop_resize(Image.fromarray(img), SIZE)
+                    resized_img = crop_resize(Image.fromarray(img), SIZE)
                     frame[key] = np.array(resized_img, dtype=np.uint8)
 
                     imshow(key, frame[key])

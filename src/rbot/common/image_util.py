@@ -1,6 +1,7 @@
 from PIL import Image
 
-def center_crop_resize(image: Image.Image, target_size: tuple):
+
+def crop_resize(image: Image.Image, target_size: tuple, crop_type: str = 'center'):
     target_width, target_height = target_size
     original_width, original_height = image.size
 
@@ -10,14 +11,24 @@ def center_crop_resize(image: Image.Image, target_size: tuple):
 
     if original_ratio > target_ratio:
         new_width = int(original_height * target_ratio)
-        left = (original_width - new_width) // 2
+        if crop_type == 'center':
+            left = (original_width - new_width) // 2
+        elif crop_type == 'left':
+            left = 0
+        elif crop_type == 'right':
+            left = original_width - new_width
+        else:
+            raise NotImplementedError
         top = 0
         right = left + new_width
         bottom = original_height
     else:
         new_height = int(original_width / target_ratio)
         left = 0
-        top = (original_height - new_height) // 2
+        if crop_type == 'center':
+            top = (original_height - new_height) // 2
+        else:
+            raise NotImplementedError
         right = original_width
         bottom = top + new_height
 
