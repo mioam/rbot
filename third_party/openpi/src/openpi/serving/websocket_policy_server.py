@@ -31,10 +31,10 @@ class WebsocketPolicyServer:
         self._metadata = metadata or {}
         logging.getLogger("websockets.server").setLevel(logging.INFO)
 
-    def serve_forever(self) -> None:
-        asyncio.run(self.run())
+    def serve_forever(self, timeout=None) -> None:
+        asyncio.run(self.run(timeout))
 
-    async def run(self):
+    async def run(self, timeout):
         async with _server.serve(
             self._handler,
             self._host,
@@ -43,7 +43,11 @@ class WebsocketPolicyServer:
             max_size=None,
             process_request=_health_check,
         ) as server:
-            await server.serve_forever()
+            try:
+                await asyncio.wait_for(server.serve_forever(), timeout=timeout)
+            except asyncio.TimeoutError:
+                print(f"运行时间达到 {timeout // 60} min, 服务器自动关闭")
+            # await server.serve_forever()
 
     async def _handler(self, websocket: _server.ServerConnection):
         logger.info(f"Connection from {websocket.remote_address} opened")

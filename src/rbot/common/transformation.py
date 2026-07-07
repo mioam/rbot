@@ -14,23 +14,23 @@ import rbot.common.rotation_utils as rtu
 # quat is r, i, j, k
 
 ROTATION_REPRESENTATIONS = Literal[
-    'axis_angle',
-    'euler_angles',
-    'quaternion',
-    'matrix',
-    'rotation_6d',
-    'rotation_9d',
-    'rotation_10d',
+    "axis_angle",
+    "euler_angles",
+    "quaternion",
+    "matrix",
+    "rotation_6d",
+    "rotation_9d",
+    "rotation_10d",
 ]
 VALID_ROTATION_REPRESENTATIONS = get_args(ROTATION_REPRESENTATIONS)
 ROTATION_REPRESENTATION_DIMS = {
-    'axis_angle': 3,
-    'euler_angles': 3,
-    'quaternion': 4,
-    'matrix': 9,
-    'rotation_6d': 6,
-    'rotation_9d': 9,
-    'rotation_10d': 10,
+    "axis_angle": 3,
+    "euler_angles": 3,
+    "quaternion": 4,
+    "matrix": 9,
+    "rotation_6d": 6,
+    "rotation_9d": 9,
+    "rotation_10d": 10,
 }
 
 
@@ -45,16 +45,16 @@ def rotation_transform(
     Transform a rotation representation into another equivalent rotation representation.
     """
     assert from_rep in VALID_ROTATION_REPRESENTATIONS, (
-        f'Invalid rotation representation: {from_rep}'
+        f"Invalid rotation representation: {from_rep}"
     )
     assert to_rep in VALID_ROTATION_REPRESENTATIONS, (
-        f'Invalid rotation representation: {to_rep}'
+        f"Invalid rotation representation: {to_rep}"
     )
-    if from_rep == 'euler_angles':
+    if from_rep == "euler_angles":
         assert from_convention is not None
     else:
         from_convention = None
-    if to_rep == 'euler_angles':
+    if to_rep == "euler_angles":
         assert to_convention is not None
     else:
         to_convention = None
@@ -62,22 +62,22 @@ def rotation_transform(
     if from_rep == to_rep and from_convention == to_convention:
         return rot
 
-    if from_rep != 'matrix':
-        if from_rep in ['rotation_9d', 'rotation_10d']:
-            to_mat = getattr(rtu, f'{from_rep}_to_matrix')
+    if from_rep != "matrix":
+        if from_rep in ["rotation_9d", "rotation_10d"]:
+            to_mat = getattr(rtu, f"{from_rep}_to_matrix")
         else:
-            to_mat = getattr(ptc, f'{from_rep}_to_matrix')
+            to_mat = getattr(ptc, f"{from_rep}_to_matrix")
             if from_convention is not None:
                 to_mat = functools.partial(to_mat, convention=from_convention)
         mat = to_mat(torch.from_numpy(rot)).numpy()
     else:
         mat = rot
 
-    if to_rep != 'matrix':
-        if to_rep in ['rotation_9d', 'rotation_10d']:
-            to_ret = getattr(rtu, f'matrix_to_{to_rep}')
+    if to_rep != "matrix":
+        if to_rep in ["rotation_9d", "rotation_10d"]:
+            to_ret = getattr(rtu, f"matrix_to_{to_rep}")
         else:
-            to_ret = getattr(ptc, f'matrix_to_{to_rep}')
+            to_ret = getattr(ptc, f"matrix_to_{to_rep}")
             if to_convention is not None:
                 to_ret = functools.partial(to_ret, convention=to_convention)
         ret = to_ret(torch.from_numpy(mat)).numpy()
@@ -98,17 +98,18 @@ def xyz_rot_transform(
     Transform an xyz_rot representation into another equivalent xyz_rot representation.
     """
     assert from_rep in VALID_ROTATION_REPRESENTATIONS, (
-        f'Invalid rotation representation: {from_rep}'
+        f"Invalid rotation representation: {from_rep}"
     )
     assert to_rep in VALID_ROTATION_REPRESENTATIONS, (
-        f'Invalid rotation representation: {to_rep}'
+        f"Invalid rotation representation: {to_rep}"
     )
 
     xyz_rot = np.array(xyz_rot)
+    dtype = xyz_rot.dtype
     if from_rep == to_rep and from_convention == to_convention:
         return xyz_rot
 
-    if from_rep != 'matrix':
+    if from_rep != "matrix":
         assert xyz_rot.shape[-1] == 3 + ROTATION_REPRESENTATION_DIMS[from_rep]
         xyz = xyz_rot[..., :3]
         rot = xyz_rot[..., 3:]
@@ -123,9 +124,9 @@ def xyz_rot_transform(
         from_convention=from_convention,
         to_convention=to_convention,
     )
-    if to_rep != 'matrix':
+    if to_rep != "matrix":
         return np.concatenate((xyz, rot), axis=-1)
-    res = np.zeros(xyz.shape[:-1] + (4, 4), dtype=np.float32)
+    res = np.zeros(xyz.shape[:-1] + (4, 4), dtype=dtype)
     res[..., :3, :3] = rot
     res[..., :3, 3] = xyz
     res[..., 3, 3] = 1
@@ -139,7 +140,7 @@ def xyz_rot_to_mat(xyz_rot, from_rep: ROTATION_REPRESENTATIONS, from_convention=
     return xyz_rot_transform(
         xyz_rot,
         from_rep=from_rep,
-        to_rep='matrix',
+        to_rep="matrix",
         from_convention=from_convention,
     )
 
@@ -150,7 +151,7 @@ def mat_to_xyz_rot(mat, to_rep: ROTATION_REPRESENTATIONS, to_convention=None):
     """
     return xyz_rot_transform(
         mat,
-        from_rep='matrix',
+        from_rep="matrix",
         to_rep=to_rep,
         to_convention=to_convention,
     )
@@ -164,12 +165,12 @@ def apply_mat_to_pose(pose, mat, rotation_rep, rotation_rep_convention=None):
     Apply transformation matrix mat to pose under any rotation form.
     """
     assert rotation_rep in VALID_ROTATION_REPRESENTATIONS, (
-        f'Invalid rotation representation: {rotation_rep}'
+        f"Invalid rotation representation: {rotation_rep}"
     )
     mat = np.array(mat)
     pose = np.array(pose)
     assert mat.shape == (4, 4)
-    if rotation_rep == 'matrix':
+    if rotation_rep == "matrix":
         assert pose.shape[-2] == 4 and pose.shape[-1] == 4
         res_pose = mat @ pose
         return res_pose
@@ -260,3 +261,13 @@ def trans_rot_mat(offsets, angles):
     offsets = (res[:3, :3] @ np.array(offsets).unsqueeze(-1)).squeeze()
     res[:3, 3] = offsets
     return res
+
+
+def rotation_distance(R_rel, degrees=False):
+    tr = np.trace(R_rel)
+    cos_theta = (tr - 1.0) / 2.0
+    cos_theta = np.clip(cos_theta, -1.0, 1.0)
+    theta = np.arccos(cos_theta)
+    if degrees:
+        return np.degrees(theta)
+    return theta

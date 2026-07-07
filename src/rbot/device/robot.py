@@ -217,9 +217,9 @@ class FlexivRobot:
         if not slow:
             self.send_impedance_online_pose(tcp)
         else:
-            self.switch_mode('cart_impedance_online')
-            self.robot.SendCartesianMotionForce(np.array(tcp), [0] * 6, 0.1)
             for i in range(100):
+                self.switch_mode('cart_impedance_online')
+                self.robot.SendCartesianMotionForce(np.array(tcp), [0] * 6, 0.1)
                 time.sleep(0.1)
                 tcpPose, jointPose, tcpVel, jointVel = self.get_robot_state()
                 diff = np.linalg.norm(np.array(tcpPose[:3]) - np.array(tcp[:3]))

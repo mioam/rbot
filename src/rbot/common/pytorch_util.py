@@ -1,13 +1,11 @@
-from typing import Dict, Callable, List
-import collections
+from collections.abc import Callable
+
 import torch
-import torch.nn as nn
 
 
 def dict_apply(
-        x: Dict[str, torch.Tensor],
-        func: Callable[[torch.Tensor], torch.Tensor]
-) -> Dict[str, torch.Tensor]:
+    x: dict[str, torch.Tensor], func: Callable[[torch.Tensor], torch.Tensor]
+) -> dict[str, torch.Tensor]:
     """
     Recursively apply a function to all tensors in a nested dictionary.
     """

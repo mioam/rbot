@@ -1,3 +1,9 @@
+import multiprocessing
+import os
+import sys
+import time
+
+from PIL import Image
 
 
 class SimpleRecorder:
@@ -10,7 +16,7 @@ class SimpleRecorder:
             f.write(f'{sys.argv}')
 
     def save(self, image):
-        path = os.path.join(self.dir, f'{int(time.time()*1000)}.png')
+        path = os.path.join(self.dir, f'{int(time.time() * 1000)}.png')
         self.pool.apply_async(self.save_image, args=[image, path])
 
     @staticmethod

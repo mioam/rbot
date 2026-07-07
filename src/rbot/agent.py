@@ -21,13 +21,13 @@ class Agent:
     ):
         print('Init robot, gripper, and camera.')
         self.robot = FlexivRobot(robot_ip)
+        self.robot.init_pose = self.ready_pose
         self.robot.send_tcp_pose(self.ready_pose, slow=True)
         time.sleep(2)
         self.gripper = FlexivGripper(self.robot)
 
         self.camera = [
-            CameraD400(camera_serial, fps=30, res=(640, 480))
-            for camera_serial in camera_serials
+            CameraD400(camera_serial, fps=30) for camera_serial in camera_serials
         ]
         self.camera_serials = camera_serials
         self.use_hand = False

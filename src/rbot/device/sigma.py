@@ -2,6 +2,7 @@ import atexit
 import contextlib
 import multiprocessing as mp
 import os
+from pathlib import Path
 import sys
 
 import numpy as np
@@ -10,7 +11,7 @@ from scipy.spatial.transform import Rotation as R
 
 def parse(px, py, pz, oa, ob, og):
     return np.array([px, py, pz]), R.from_euler(
-        'XYZ', np.array([oa, ob, og]), degrees=False
+        "XYZ", np.array([oa, ob, og]), degrees=False
     )
 
 
@@ -31,7 +32,9 @@ class SigmaProcess:
             target = {nonzero[-1]}
             os.sched_setaffinity(0, target)
         # 仅在子进程中导入和初始化 SDK，实现彻底隔离
-        sys.path.insert(0, 'sigma_sdk')
+        sys.path.insert(
+            0, str(Path(__file__).parent.parent.parent.parent / "sigma_sdk")
+        )
         import sigma7
 
         sigma7.drdOpen()
@@ -41,19 +44,19 @@ class SigmaProcess:
         sigma7.drdRegulateGrip(on=False)
         sigma7.drdStart()
 
-        print('[Sigma SDK] Backend driver started on separate core.')
-        self.pipe.send(('READY',))
+        print("[Sigma SDK] Backend driver started on separate core.")
+        self.pipe.send(("READY",))
 
         try:
             while True:
                 # 阻塞等待主进程指令
                 if self.pipe.poll(0.1):
                     cmd = self.pipe.recv()
-                    if cmd == 'GET_POS':
+                    if cmd == "GET_POS":
                         data = sigma7.drdGetPositionAndOrientation()
-                        self.pipe.send(('OK', data))
-                    elif cmd == 'CLOSE':
-                        self.pipe.send(('OK',))
+                        self.pipe.send(("OK", data))
+                    elif cmd == "CLOSE":
+                        self.pipe.send(("OK",))
                         break
         finally:
             sigma7.drdClose()
@@ -66,7 +69,7 @@ class Sigma7:
         self.width_scale = width_scale
 
         # 启动独立进程
-        self._ctx = mp.get_context('spawn')
+        self._ctx = mp.get_context("spawn")
         self._parent_conn, self._child_conn = self._ctx.Pipe()
         self.hw_handler = SigmaProcess(self._child_conn)
         self._process = self._ctx.Process(target=self.hw_handler.run, daemon=False)
@@ -74,16 +77,16 @@ class Sigma7:
         atexit.register(self.close)
         self._closed = False
         msg = self._parent_conn.recv()
-        assert msg[0] == 'READY'
+        assert msg[0] == "READY"
 
         self.init_p, self.init_r, _ = self.get_current()
         self.detached = False
 
     def get_current(self):
         """通过 Pipe 向子进程请求数据"""
-        self._parent_conn.send('GET_POS')
+        self._parent_conn.send("GET_POS")
         ok, res = self._parent_conn.recv()
-        assert ok == 'OK'
+        assert ok == "OK"
         sig, px, py, pz, oa, ob, og, pg = res[0:8]
         curr_p, curr_r = parse(px, py, pz, oa, ob, og)
         return curr_p, curr_r, pg
@@ -119,7 +122,7 @@ class Sigma7:
         self._closed = True
         try:
             if self._process.is_alive():
-                self._parent_conn.send('CLOSE')
+                self._parent_conn.send("CLOSE")
                 self._parent_conn.recv()
         except (BrokenPipeError, EOFError, OSError):
             pass
@@ -136,7 +139,7 @@ class Sigma7:
         self.close()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     import time
 
     sigma = Sigma7()
