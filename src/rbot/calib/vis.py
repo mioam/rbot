@@ -6,8 +6,7 @@ import rerun as rr
 import tyro
 import yaml
 
-from rbot.calib.utils import getXYZRGB
-from rbot.common.projector import Projector
+from rbot.common.projector import Projector, getXYZRGB
 from rbot.common.transformation import xyz_rot_to_mat
 
 WORKSPACE_MIN = np.array([0.0, -0.5, -0.2])
