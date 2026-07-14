@@ -374,9 +374,9 @@ def _build_config():
         ),
     }
 
-    config = tyro.extras.overridable_config_cli({
-        k: (k, v) for k, v in defaults.items()
-    })
+    config = tyro.extras.overridable_config_cli(
+        {k: (k, v) for k, v in defaults.items()}
+    )
     assert type(config.data) is LeRobotMyDataConfig
     config = dataclasses.replace(config, name=f'{config.name}_{config.data.name}')
     return config

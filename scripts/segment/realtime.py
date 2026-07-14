@@ -47,36 +47,44 @@ class Sam3Core:
 
     def add_frame(self, session_id, frame_rgb: np.ndarray):
         # predictor expects numpy RGB arrays, same as video_stream script
-        return self.predictor.handle_request({
-            'type': 'add_frame',
-            'session_id': session_id,
-            'frame': frame_rgb,
-        })
+        return self.predictor.handle_request(
+            {
+                'type': 'add_frame',
+                'session_id': session_id,
+                'frame': frame_rgb,
+            }
+        )
 
     def add_prompt(self, session_id, frame_index: int, text: str):
-        return self.predictor.handle_request({
-            'type': 'add_prompt',
-            'session_id': session_id,
-            'frame_index': frame_index,
-            'text': text,
-        })
+        return self.predictor.handle_request(
+            {
+                'type': 'add_prompt',
+                'session_id': session_id,
+                'frame_index': frame_index,
+                'text': text,
+            }
+        )
 
     def run_inference(self, session_id, frame_index: int):
-        ret = self.predictor.handle_request({
-            'type': 'run_inference',
-            'session_id': session_id,
-            'frame_index': frame_index,
-        })
+        ret = self.predictor.handle_request(
+            {
+                'type': 'run_inference',
+                'session_id': session_id,
+                'frame_index': frame_index,
+            }
+        )
         # self.predictor._get_session(session_id)['state']['text_prompt'] = None
         return ret
 
     def end_session(self, session_id):
         # best-effort cleanup if predictor implements it; ignore if not supported
         try:
-            resp = self.predictor.handle_request({
-                'type': 'close_session',
-                'session_id': session_id,
-            })
+            resp = self.predictor.handle_request(
+                {
+                    'type': 'close_session',
+                    'session_id': session_id,
+                }
+            )
         except Exception:
             resp = None
         # self.sessions.discard(session_id)

@@ -8,18 +8,18 @@ class Projector:
     def __init__(self, calib_path):
         calib_path = Path(calib_path)
         self.cam_to_base = {}
-        files = calib_path.glob("*_camT.npy")
+        files = calib_path.glob('*_camT.npy')
         print(calib_path)
         for file in files:
-            cam_id = file.stem.split("_")[0]
+            cam_id = file.stem.split('_')[0]
             cam_to_base = np.load(file)
             # print(f'loaded cam {cam_id}', cam_to_base)
             self.cam_to_base[cam_id] = cam_to_base
 
         self.cam_intr = {}
-        files = calib_path.glob("*_intr.npy")
+        files = calib_path.glob('*_intr.npy')
         for file in files:
-            cam_id = file.stem.split("_")[0]
+            cam_id = file.stem.split('_')[0]
             cam_intr = np.load(file)
             self.cam_intr[cam_id] = cam_intr
 

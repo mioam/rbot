@@ -7,7 +7,7 @@ from PIL import Image
 from termcolor import cprint
 import tyro
 
-from lerobot.common.datasets.lerobot_dataset import LeRobotDataset
+from lerobot.datasets.lerobot_dataset import LeRobotDataset
 from rbot.common.image_util import Cropper
 
 
@@ -16,16 +16,19 @@ class RawDatasetReader:
     读取 RawDataset 保存的数据。
     """
 
-    def __init__(self, datapath: str):
+    def __init__(self, datapath: str | Path):
         self.datapath = Path(datapath)
-        self.demo_list = sorted([
-            int(p.name) for p in self.datapath.iterdir() if p.is_dir()
-        ])
+        self.demo_list = sorted(
+            int(p.name)
+            for p in self.datapath.iterdir()
+            if p.is_dir() and p.name.isdigit()
+        )
+        if not self.demo_list:
+            raise ValueError(f'No numeric demo directories found in {self.datapath}')
         self.target_size = [256, 256]
         self.cropper = Cropper()
 
     def get_image(self, img_path: Path):
-
         img = Image.open(img_path)
         img = np.array(img)
         return img
@@ -97,6 +100,12 @@ class RawDatasetReader:
                 frame['actions'] = frame.pop('action')
             frame = {k: frame[k] for k in frame if k in self.features or k == 'task'}
 
+            missing = set(self.features) - set(self.cam_features) - set(frame)
+            if missing:
+                raise ValueError(
+                    f'{demo_dir}/data.pkl frame {idx} is missing features: {sorted(missing)}'
+                )
+
             # 自动寻找对应图片目录
             for key in self.cam_features:
                 img_path = demo_dir / key / f'{idx:05d}.png'
@@ -107,7 +116,14 @@ class RawDatasetReader:
             yield frame
 
 
-def main(path: str, name: str, FPS=10):
+def main(
+    path: str,
+    name: str,
+    task: str,
+    fps: int = 10,
+):
+    """Convert recorded raw demos to a finalized LeRobot Dataset v3 dataset."""
+
     reader = RawDatasetReader(path)
     features = reader.get_feature()
 
@@ -115,18 +131,30 @@ def main(path: str, name: str, FPS=10):
 
     dataset = LeRobotDataset.create(
         repo_id=REPO_NAME,
-        fps=FPS,
+        fps=fps,
         features=features,
-        # streaming_encoding=True,
     )
-    for demo_dir in reader.get_demo_dirs():
-        cprint(demo_dir, 'green')
-        for frame in reader.iter_frames(demo_dir):
-            dataset.add_frame(frame)
-        dataset.save_episode()
+    try:
+        for demo_dir in reader.get_demo_dirs():
+            cprint(demo_dir, 'green')
+            frame_count = 0
+            for frame in reader.iter_frames(demo_dir):
+                # Dataset v3 requires every frame to carry its task prompt. `record3.py`
+                # stores an empty task when no prompt was given during recording, so
+                # treat that as absent and use the explicit CLI default.
+                if not frame.get('task'):
+                    frame['task'] = task
+                dataset.add_frame(frame)
+                frame_count += 1
+            if frame_count == 0:
+                raise ValueError(f'{demo_dir}/data.pkl contains no frames')
+            dataset.save_episode()
+    finally:
+        # v3 parquet metadata and pending video encoders are not valid until this
+        # is called. Keep it explicit rather than relying on object finalization.
+        dataset.finalize()
     with (dataset.root / 'log').open('w') as f:
         f.write(f'{sys.argv}')
-    # dataset.finalize()
 
 
 if __name__ == '__main__':

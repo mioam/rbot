@@ -176,11 +176,13 @@ class CameraD400:
             intrinsics.fx,
             intrinsics.fy,
         ]
-        camIntrinsics = np.array([
-            [mtx[4], 0, mtx[2]],
-            [0, mtx[5], mtx[3]],
-            [0, 0, 1.0],
-        ])
+        camIntrinsics = np.array(
+            [
+                [mtx[4], 0, mtx[2]],
+                [0, mtx[5], mtx[3]],
+                [0, 0, 1.0],
+            ]
+        )
         return camIntrinsics
 
     def __del__(self):

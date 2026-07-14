@@ -93,11 +93,13 @@ def _load_weights_and_validate(
     )
 
     # Remove jax.ShapeDtypeStruct from the loaded params. This makes sure that only the loaded params are returned.
-    return traverse_util.unflatten_dict({
-        k: v
-        for k, v in traverse_util.flatten_dict(loaded_params).items()
-        if not isinstance(v, jax.ShapeDtypeStruct)
-    })
+    return traverse_util.unflatten_dict(
+        {
+            k: v
+            for k, v in traverse_util.flatten_dict(loaded_params).items()
+            if not isinstance(v, jax.ShapeDtypeStruct)
+        }
+    )
 
 
 @at.typecheck

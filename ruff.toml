@@ -1,5 +1,6 @@
 line-length = 88
 target-version = "py310"
+exclude = ["third_party"]
 
 [lint]
 select = [
@@ -37,7 +38,6 @@ known-first-party = ["rbot", "openpi", "lerobot"]
 # known-third-party = ["wandb"]
 
 [format]
-exclude = ["third_party"]
 quote-style = "single"
 indent-style = "space"
 line-ending = "auto"

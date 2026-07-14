@@ -9,8 +9,9 @@ __pycache__/
 *.py[cod]
 *$py.class
 
-.venv
-.envrc
+/.venv
+/.envrc
+/AGENTS.md
 /pyproject.toml
 
 /third_party/3D-Diffusion-Policy
