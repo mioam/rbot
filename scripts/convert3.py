@@ -8,7 +8,7 @@ from termcolor import cprint
 import tyro
 
 from lerobot.common.datasets.lerobot_dataset import LeRobotDataset
-from rbot.common.image_util import crop_resize
+from rbot.common.image_util import Cropper
 
 
 class RawDatasetReader:
@@ -22,28 +22,32 @@ class RawDatasetReader:
             int(p.name) for p in self.datapath.iterdir() if p.is_dir()
         ])
         self.target_size = [256, 256]
+        self.cropper = Cropper()
 
-    def get_image(self, img_path: Path, crop_type: str):
+    def get_image(self, img_path: Path):
 
         img = Image.open(img_path)
-        img = crop_resize(img, self.target_size, crop_type=crop_type)
         img = np.array(img)
         return img
 
     def get_feature(self):
         demo_dir = Path(self.datapath / f'{self.demo_list[0]}')
         self.cam_features = {}
+        cam_data = {}
         for p in demo_dir.iterdir():
             if p.is_dir():
                 if 'depth' in p.name:
                     continue
-                img = self.get_image(p / f'{0:05}.png', crop_type='center')
-                print(f'{p.name}: {img.shape}, {img.dtype}')
-                self.cam_features[p.name] = {
-                    'dtype': 'image',
-                    'shape': img.shape,
-                    'names': ['height', 'width', 'channel'],
-                }
+                cam_data[p.name] = self.get_image(p / f'{0:05}.png')
+        self.cropper.crop_frame(cam_data)
+        for key in cam_data:
+            img = cam_data[key]
+            print(f'{key}: {img.shape}, {img.dtype}')
+            self.cam_features[key] = {
+                'dtype': 'image',
+                'shape': img.shape,
+                'names': ['height', 'width', 'channel'],
+            }
 
         self.features = self.cam_features | {
             'observation.state.joint': {
@@ -96,18 +100,15 @@ class RawDatasetReader:
             # 自动寻找对应图片目录
             for key in self.cam_features:
                 img_path = demo_dir / key / f'{idx:05d}.png'
-                img = self.get_image(img_path, crop_type=self.crop_type[key])
+                img = self.get_image(img_path)
                 frame[key] = img
+            self.cropper.crop_frame(frame)
 
             yield frame
 
 
 def main(path: str, name: str, FPS=10):
     reader = RawDatasetReader(path)
-    reader.crop_type = {
-        'observation.images.244222073667': 'right',
-        'observation.images.750612070265': 'center',
-    }
     features = reader.get_feature()
 
     REPO_NAME = f'miaom/{name}'

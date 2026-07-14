@@ -17,9 +17,9 @@ BLOCK_TIME = 0.1 - 0.03
 
 class Agent:
     def __init__(
-        self, robot_ip='192.168.2.100', camera_serials=('135122075425',), **kwargs
+        self, robot_ip="192.168.2.100", camera_serials=("135122075425",), **kwargs
     ):
-        print('Init robot, gripper, and camera.')
+        print("Init robot, gripper, and camera.")
         self.robot = FlexivRobot(robot_ip)
         self.robot.init_pose = self.ready_pose
         self.robot.send_tcp_pose(self.ready_pose, slow=True)
@@ -33,9 +33,9 @@ class Agent:
         self.use_hand = False
         # self.use_hand = True
         if self.use_hand:
-            self.camera_h = CameraD400('104122061850', res=(640, 480))
+            self.camera_h = CameraD400("104122061850", res=(640, 480))
             self.intrinsics_h = self.camera_h.getIntrinsics()
-        print('Init done')
+        print("Init done")
 
     @property
     def ready_pose(self):
@@ -58,14 +58,14 @@ class Agent:
         for camera in self.camera:
             color_image, depth_image = camera.get_data()
             color_image = cv2.cvtColor(color_image, cv2.COLOR_BGR2RGB)
-            cam_data[f'observation.images.{camera.serial}'] = color_image
-            cam_data[f'observation.depths.{camera.serial}'] = depth_image
+            cam_data[f"observation.images.{camera.serial}"] = color_image
+            cam_data[f"observation.depths.{camera.serial}"] = depth_image
         tcpPose, jointPose, _, _ = self.robot.get_robot_state()
         gripperPose = self.gripper.get_gripper_state()
         frame = cam_data | {
-            'observation.state.joint': np.array(jointPose).astype(np.float32),
-            'observation.state.tcp': np.array(tcpPose).astype(np.float32),
-            'observation.state.gripper': np.array([gripperPose]).astype(np.float32),
+            "observation.state.joint": np.array(jointPose).astype(np.float32),
+            "observation.state.tcp": np.array(tcpPose).astype(np.float32),
+            "observation.state.gripper": np.array([gripperPose]).astype(np.float32),
         }
         return frame
 
@@ -101,15 +101,17 @@ class Agent:
         self.robot.stop()
 
 
-if __name__ == '__main__':
-    agent = Agent(camera_serials=['750612070265'])
+if __name__ == "__main__":
+    agent = Agent(camera_serials=["750612070265"])
     obv = agent.get_observation()
     tcp = agent.get_tcp_pose()
     # agent.set_gripper_width()
     agent.set_tcp_pose(tcp, blocking=True)
     from rbot.utils.tools import show
 
-    show({
-        'obv': obv,
-        'tcp': tcp,
-    })
+    show(
+        {
+            "obv": obv,
+            "tcp": tcp,
+        }
+    )

@@ -4,11 +4,13 @@ import time
 
 import cv2
 import numpy as np
+from PIL import Image
 from scipy.spatial.transform import Rotation as R
 from termcolor import cprint
 import tyro
 
 from rbot.agent import Agent
+from rbot.common.image_util import Cropper
 from rbot.common.precise_sleep import precise_wait
 from rbot.device.keyboard import KeyboardCounter
 from rbot.device.sigma import Sigma7
@@ -69,6 +71,7 @@ def record(
     controller: Controller,
     dataset: RawDataset,
     task: str,
+    reference=None,
 ):
     dataset.new_demo()
     # color_image, depth_image = camera.get_data()
@@ -76,7 +79,7 @@ def record(
     # depth_image: 460,640  0~4681 [mm]
 
     controller.reset()
-
+    controller.detach = 'init'
     while True:
         curr_time = int(time.time() * 1000)
         frame_start = time.monotonic()
@@ -159,12 +162,15 @@ def record(
     if not controller.start or controller.quit or controller.discard:
         print('discard')
         dataset.discard()
-        return
+        return False
     dataset.save()
+    return True
 
 
 def main(
     camera_serials=['750612070265', '244222073667'],
+    ref: str | None = None,
+    start: int = 0,
 ):
     cprint(f'{camera_serials=}', 'red')
 
@@ -176,15 +182,35 @@ def main(
         Path('/ssd1/mzc/data')
         / f'raw/record-{datetime.now().strftime("%Y%m%d-%H:%M:%S")}'
     )
+    if ref is not None:
+        ref = Path(ref)
+        cnt = start
+        cropper = Cropper()
+        # samples = np.loadtxt(ref / 'samples.txt').reshape(-1, 6)
 
     while not controller.quit:
-        record(
+        if ref is not None:
+            controller.reset()
+            cprint(f'init with {cnt}, press f to finish', 'green')
+            key = 'observation.images.750612070265'
+            ref_img = np.array(Image.open(ref / key / f'{cnt:05}.png'))
+            while not controller.finish:
+                controller.update()
+                frame = agent.get_frame()
+                cropper.crop_frame(frame)
+                imshow('init', frame[key] // 2 + ref_img // 2)
+                time.sleep(0.1)
+            cprint('initialized', 'green')
+        flag = record(
             agent,
             sigma,
             controller,
             dataset,
             task='',
         )
+        if ref is not None and flag:
+            cprint(f'saved with {cnt}', 'green')
+            cnt += 1
     print('quit')
 
 

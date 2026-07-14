@@ -1,7 +1,9 @@
+import numpy as np
 from PIL import Image
 
 
 def crop_resize(image: Image.Image, target_size: tuple, crop_type: str = 'center'):
+
     target_width, target_height = target_size
     original_width, original_height = image.size
 
@@ -36,3 +38,29 @@ def crop_resize(image: Image.Image, target_size: tuple, crop_type: str = 'center
     resized_image = cropped_image.resize(target_size, Image.LANCZOS)
 
     return resized_image
+
+
+class Cropper:
+    def __init__(self):
+        self.crop_type = {
+            'observation.images.244222073667': 'right',
+            'observation.images.750612070265': 'center',
+            'observation.depths.244222073667': 'right',
+            'observation.depths.750612070265': 'center',
+        }
+        self.target_size = (256, 256)
+
+    def crop_img(self, img: Image.Image, key):
+        return crop_resize(img, self.target_size, self.crop_type[key])
+
+    def crop_frame(self, frame):
+        # 原地修改
+        for key in frame:
+            if key in self.crop_type:
+                frame[key] = np.array(
+                    crop_resize(
+                        Image.fromarray(frame[key]),
+                        self.target_size,
+                        self.crop_type[key],
+                    )
+                )

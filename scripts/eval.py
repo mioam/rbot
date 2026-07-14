@@ -2,11 +2,10 @@ from pathlib import Path
 import time
 
 import numpy as np
-from PIL import Image
 import tyro
 
 from rbot.agent import Agent
-from rbot.common.image_util import crop_resize
+from rbot.common.image_util import Cropper
 from rbot.common.precise_sleep import precise_wait
 from rbot.record import RawDataset
 from rbot.utils.tools import imshow
@@ -39,6 +38,7 @@ def main(ckpt: str = 'checkpoints/pi0_my/my_experiment/29999', remote=False, por
         )
     dataset = RawDataset(Path('/ssd1/mzc/data/replay'), exist_ok=True)
     dataset.new_demo()
+    cropper = Cropper()
     try:
         while True:
             frame = agent.get_frame()
@@ -47,9 +47,10 @@ def main(ckpt: str = 'checkpoints/pi0_my/my_experiment/29999', remote=False, por
             for key in frame:
                 if 'images' in key:
                     img = frame[key]
-                    resized_img = crop_resize(Image.fromarray(img), SIZE)
-                    frame[key] = np.array(resized_img, dtype=np.uint8)
-
+                    frame[key] = np.array(img, dtype=np.uint8)
+            cropper.crop_frame(frame)
+            for key in frame:
+                if 'images' in key:
                     imshow(key, frame[key])
             frame['prompt'] = ''
             data = policy.infer(frame)
